@@ -56,7 +56,7 @@ type hostPort struct {
 	port int
 }
 
-const idleConnectionReapDelay = 30 * time.Second
+const idleConnectionReapDelay = 5 * time.Minute
 
 type Config struct {
 	MaxPendingConnectionsPerHost int
@@ -443,6 +443,7 @@ func newCluster(cfg Config) (*cluster, error) {
 	cfg.connConfig.skipHostnameVerification = cfg.SkipHostnameVerification
 	cfg.connConfig.hostname = hostname
 	cfg.validateConnConfig()
+	cfg.logger.Log("initializing dax cluster client")
 	return &cluster{seeds: seeds, config: cfg, executor: newExecutor(), clientBuilder: &singleClientBuilder{}}, nil
 }
 
