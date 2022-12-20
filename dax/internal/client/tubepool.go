@@ -116,6 +116,14 @@ func (p *tubePool) get() (tube, error) {
 // Gets a new or reuses existing tube with provided context.
 // Create a new tube even if pool reached maxConcurrentConnAttempts if highPriority is true.
 func (p *tubePool) getWithContext(ctx context.Context, highPriority bool, opt RequestOptions) (tube, error) {
+	now := time.Now()
+	defer func(ctx context.Context, now time.Time) {
+		elapsed := time.Since(now).Milliseconds()
+		value := ctx.Value("dax_connection_get")
+		intvalue := value.(*int)
+		*intvalue = int(elapsed)
+	}(ctx, now)
+
 	for {
 		p.mutex.Lock()
 		if p.closed {
@@ -145,10 +153,10 @@ func (p *tubePool) getWithContext(ctx context.Context, highPriority bool, opt Re
 
 		var done chan tube
 		if p.gate.tryEnter() {
-			go p.allocAndReleaseGate(session, done, true, opt)
+			go p.allocAndReleaseGate(ctx, session, done, true, opt)
 		} else if highPriority {
 			done = make(chan tube)
-			go p.allocAndReleaseGate(session, done, false, opt)
+			go p.allocAndReleaseGate(ctx, session, done, false, opt)
 		}
 
 		select {
@@ -177,8 +185,8 @@ func (p *tubePool) getWithContext(ctx context.Context, highPriority bool, opt Re
 
 // Allocates a new tube and optionally releases the gate.
 // If done channel isn't nil the new tube will be send there as opposed to idle tubes stack.
-func (p *tubePool) allocAndReleaseGate(session int64, done chan tube, releaseGate bool, opt RequestOptions) {
-	tube, err := p.alloc(session, opt)
+func (p *tubePool) allocAndReleaseGate(ctx context.Context, session int64, done chan tube, releaseGate bool, opt RequestOptions) {
+	tube, err := p.alloc(ctx, session, opt)
 	if releaseGate {
 		p.gate.exit()
 	}
@@ -337,8 +345,8 @@ func (p *tubePool) reapIdleConnections() {
 }
 
 // Allocates a new tube by establishing a new connection and performing initialization.
-func (p *tubePool) alloc(session int64, opt RequestOptions) (tube, error) {
-	conn, err := p.dialContext(context.TODO(), network, p.address)
+func (p *tubePool) alloc(ctx context.Context, session int64, opt RequestOptions) (tube, error) {
+	conn, err := p.dialContext(ctx, network, p.address)
 	if err != nil {
 		p.logDebug(opt, fmt.Sprintf("DEBUG: Error in establishing connection to address %s : %s", p.address, err))
 		return nil, err
