@@ -120,8 +120,10 @@ func (p *tubePool) getWithContext(ctx context.Context, highPriority bool, opt Re
 	defer func(ctx context.Context, now time.Time) {
 		elapsed := time.Since(now).Milliseconds()
 		value := ctx.Value("dax_connection_get")
-		intvalue := value.(*int)
-		*intvalue = int(elapsed)
+		intvalue, ok := value.(*int)
+		if ok {
+			*intvalue = int(elapsed)
+		}
 	}(ctx, now)
 
 	for {
