@@ -117,8 +117,8 @@ func (p *tubePool) get() (tube, error) {
 // Create a new tube even if pool reached maxConcurrentConnAttempts if highPriority is true.
 func (p *tubePool) getWithContext(ctx context.Context, highPriority bool, opt RequestOptions) (tube, error) {
 	now := time.Now()
-	defer func(ctx context.Context, now time.Time) {
-		elapsed := time.Since(now).Milliseconds()
+	defer func(ctx context.Context, start time.Time) {
+		elapsed := time.Since(start).Milliseconds()
 		value := ctx.Value("dax_connection_get")
 		intvalue, ok := value.(*int)
 		if ok {
