@@ -56,7 +56,7 @@ type hostPort struct {
 	port int
 }
 
-const idleConnectionReapDelay = 5 * time.Minute
+const idleConnectionReapDelay = 30 * time.Minute
 
 type Config struct {
 	MaxPendingConnectionsPerHost int
