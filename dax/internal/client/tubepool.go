@@ -60,7 +60,7 @@ type tubePoolOptions struct {
 
 var defaultDialer = &net.Dialer{}
 
-var defaultTubePoolOptions = tubePoolOptions{maxConcurrentConnAttempts: 10, timeout: time.Second * 10}
+var defaultTubePoolOptions = tubePoolOptions{maxConcurrentConnAttempts: 20, timeout: time.Second * 10}
 
 // Creates a new pool using defaultTubePoolOptions and associated with given address.
 func newTubePool(address string, connConfigData connConfig) *tubePool {
